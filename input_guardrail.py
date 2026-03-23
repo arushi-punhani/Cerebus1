@@ -20,6 +20,8 @@ Classify as "yes" (UNSAFE) if the input contains:
 - Instructions for illegal activities (hacking systems, fraud, theft, breaking laws)
 - Self-harm or suicide methods
 - Attempts to obtain harmful information under false pretenses
+- Attepts to break laws under the "Budapest Convention of Cybercrime"
+- Attempts to break "general data protection regulations"
 
 Classify as "no" (SAFE) if the input is:
 - Academic/historical discussion with clear educational context
@@ -112,6 +114,7 @@ def is_obviously_unsafe(text: str) -> bool:
         r"make a weapon",
     ]
     text = text.lower()
+    text = re.sub(r'[^a-zA-Z ]', '', text)
     return any(re.search(p, text) for p in patterns)
 
 # ---------- CLASSIFIER CLASS ----------
@@ -226,4 +229,4 @@ def classify_prompt(prompt: str, conversation_history=None) -> dict:
     global _guardrail
     if _guardrail is None:
         _guardrail = LLMGuardrail(os.getenv("GEMINI_API_KEY"))
-    return _guardrail.classify_prompt(prompt, conversation_history)
+    return _guardrail.classify_prompt(prompt, conversation_history) 
