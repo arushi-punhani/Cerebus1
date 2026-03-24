@@ -55,6 +55,7 @@ def _contains_unsafe_output(text: str) -> bool:
 		r"\b(how to|best way to|instructions to)\b.*\b(hack|bypass authentication|steal credentials|deploy malware)\b",
 		r"\b(how to|best way to|instructions to)\b.*\b(kill|murder|poison someone)\b",
 		r"\b(suicide method|how to commit suicide|painless suicide)\b",
+		r"\b(continue|next step|step \d+|as discussed above|from previous steps)\b.*\b(bomb|explosive|poison|weapon|hack|malware|kill|murder)\b",
 	]
 	return any(re.search(pattern, cleaned) for pattern in patterns)
 
@@ -105,7 +106,7 @@ class LLMOutputGuardrail:
 			except Exception:
 				self.model = None
 
-	def _classify_with_llm(self, output_text: str) -> dict:
+	def _classify_with_llm(self, output_text: str, prompt: str = "", conversation_history=None) -> dict:
 		if not self.model:
 			return {
 				"label": "no",
@@ -114,8 +115,19 @@ class LLMOutputGuardrail:
 			}
 
 		try:
+			conversation_history = conversation_history or []
+			context = ""
+			for i, turn in enumerate(conversation_history):
+				role = turn.get("role", "unknown") if isinstance(turn, dict) else "unknown"
+				content = turn.get("content", "") if isinstance(turn, dict) else str(turn)
+				context += f"Turn {i+1} ({role}): {content}\n"
+			if prompt:
+				context += f"Prompt: {prompt}\n"
+
+			combined_text = output_text if not context else f"Context:\n{context}\nOutput:\n{output_text}"
+
 			response = self.model.generate_content(
-				OUTPUT_SAFETY_CLASSIFIER_PROMPT + "\n\n" + output_text,
+				OUTPUT_SAFETY_CLASSIFIER_PROMPT + "\n\n" + combined_text,
 				generation_config=genai.types.GenerationConfig(
 					temperature=0.1,
 					max_output_tokens=300,
@@ -146,8 +158,6 @@ class LLMOutputGuardrail:
 
 	def classify_output(self, output_text: str, prompt: str = "", conversation_history=None) -> dict:
 		conversation_history = conversation_history or []
-		_ = prompt
-		_ = conversation_history
 
 		if not output_text or not output_text.strip():
 			return {
@@ -169,7 +179,11 @@ class LLMOutputGuardrail:
 				"text": "",
 			}
 
-		llm_safety = self._classify_with_llm(output_text)
+		llm_safety = self._classify_with_llm(
+			output_text,
+			prompt=prompt,
+			conversation_history=conversation_history,
+		)
 		if llm_safety.get("label") == "yes":
 			return {
 				"safety": "unsafe",

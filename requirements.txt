@@ -1,4 +1,6 @@
 google-genai
+google-generativeai
 flask
 python-dotenv
 requests
+pytest

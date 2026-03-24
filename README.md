@@ -1,7 +1,6 @@
 # Cerebus
 Dual LLM Guardrail Architecture - Prompt Security Firewall
 
-
 ## Installation and Setup
  - `python -m venv ./venv`
  - `pip install -r requirements.txt`

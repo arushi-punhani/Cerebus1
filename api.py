@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-import google.genai as genai
+import google.generativeai as genai
 from dotenv import load_dotenv
 import os
 import input_guardrail
@@ -45,6 +45,7 @@ def generate():
             classification.get("skeleton_key") == "yes"
             or classification.get("deceptive_delight") == "yes"
             or classification.get("many_shot") == "yes"
+            or classification.get("crescendo") == "yes"
             or classification.get("safety") == "unsafe"
         )
 
